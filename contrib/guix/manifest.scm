@@ -276,7 +276,9 @@ chain for " target " development."))
            (list
              gcc-toolchain-12
              (list gcc-toolchain-12 "static")
-             (make-jude-cross-toolchain target)))
+             (if (string-contains target "loongarch64")
+               (make-jude-cross-toolchain target #:base-libc glibc)
+               (make-jude-cross-toolchain target))))
           ((string-contains target "freebsd")
            (list
              xz ; used to unpack freebsd_base
