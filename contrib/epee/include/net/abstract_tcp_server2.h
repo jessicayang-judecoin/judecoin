@@ -44,6 +44,7 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <chrono>
 #include <condition_variable>
 
 #include <boost/asio.hpp>
@@ -128,6 +129,7 @@ namespace net_utils
 
     void start_handshake();
     void start_read();
+    void handle_read(size_t bytes_transferred);
     void start_write();
     void start_shutdown();
     void cancel_socket();
@@ -139,6 +141,7 @@ namespace net_utils
 
     void terminate();
     void on_terminating();
+    void terminate_async();
 
     bool send(epee::byte_slice message);
     bool start_internal(
@@ -192,6 +195,7 @@ namespace net_utils
         bool wait_read;
         bool handle_read;
         bool cancel_read;
+        bool shutdown_read;
 
         bool wait_write;
         bool handle_write;
@@ -323,7 +327,7 @@ namespace net_utils
     //----------------- i_service_endpoint ---------------------
     virtual bool do_send(byte_slice message); ///< (see do_send from i_service_endpoint)
     virtual bool send_done();
-    virtual bool close();
+    virtual bool close(const bool wait_for_shutdown);
     virtual bool call_run_once_service_io();
     virtual bool request_callback();
     virtual io_context_t& get_io_context();
@@ -376,7 +380,7 @@ namespace net_utils
     bool timed_wait_server_stop(uint64_t wait_mseconds);
 
     /// Stop the server.
-    void send_stop_signal();
+    void send_stop_signal(std::function<void()> close_all_connections = [](){});
 
     bool is_stop_signal_sent() const noexcept { return m_stop_signal_sent; };
 
@@ -442,7 +446,7 @@ namespace net_utils
       idle_callback_conext_base(boost::asio::io_context& io_serice):
                                                           m_timer(io_serice)
       {}
-      boost::asio::deadline_timer m_timer;
+      boost::asio::steady_timer m_timer;
     };
 
     template <class t_handler>
@@ -466,7 +470,7 @@ namespace net_utils
       {
         boost::shared_ptr<idle_callback_conext<t_handler>> ptr(new idle_callback_conext<t_handler>(io_context_, t_callback, timeout_ms));
         //needed call handler here ?...
-        ptr->m_timer.expires_from_now(boost::posix_time::milliseconds(ptr->m_period));
+        ptr->m_timer.expires_after(std::chrono::milliseconds(ptr->m_period));
         ptr->m_timer.async_wait(boost::bind(&boosted_tcp_server<t_protocol_handler>::global_timer_handler<t_handler>, this, ptr));
         return true;
       }
@@ -477,7 +481,7 @@ namespace net_utils
       //if handler return false - he don't want to be called anymore
       if(!ptr->call_handler())
         return true;
-      ptr->m_timer.expires_from_now(boost::posix_time::milliseconds(ptr->m_period));
+      ptr->m_timer.expires_after(std::chrono::milliseconds(ptr->m_period));
       ptr->m_timer.async_wait(boost::bind(&boosted_tcp_server<t_protocol_handler>::global_timer_handler<t_handler>, this, ptr));
       return true;
     }

@@ -315,7 +315,7 @@ namespace nodetool
      }
 
       for (const auto &c: conns)
-        zone.second.m_net_server.get_config_object().close(c);
+        zone.second.m_net_server.get_config_object().close(c, false);
 
       conns.clear();
     }
@@ -371,7 +371,7 @@ namespace nodetool
         return true;
       });
       for (const auto &c: conns)
-        zone.second.m_net_server.get_config_object().close(c);
+        zone.second.m_net_server.get_config_object().close(c, false);
 
       for (int i = 0; i < 2; ++i)
         zone.second.m_peerlist.filter(i == 0, [&subnet](const peerlist_entry &pe){
@@ -428,8 +428,9 @@ namespace nodetool
   {
     bool testnet = command_line::get_arg(vm, cryptonote::arg_testnet_on);
     bool stagenet = command_line::get_arg(vm, cryptonote::arg_stagenet_on);
+    bool regtest = command_line::get_arg(vm, cryptonote::arg_regtest_on);
     const bool pad_txs = command_line::get_arg(vm, arg_pad_transactions);
-    m_nettype = testnet ? cryptonote::TESTNET : stagenet ? cryptonote::STAGENET : cryptonote::MAINNET;
+    m_nettype = testnet ? cryptonote::TESTNET : stagenet ? cryptonote::STAGENET : regtest ? cryptonote::FAKECHAIN : cryptonote::MAINNET;
 
     network_zone& public_zone = m_network_zones[epee::net_utils::zone::public_];
     public_zone.m_connect = &public_connect;
@@ -774,6 +775,10 @@ namespace nodetool
     {
       return get_ip_seed_nodes();
     }
+    if (m_nettype == cryptonote::FAKECHAIN)
+    {
+      return {};
+    }
     if (!m_enable_dns_seed_nodes)
     {
       // TODO: a domain can be set through socks, so that the remote side does the lookup for the DNS seed nodes.
@@ -928,8 +933,8 @@ namespace nodetool
     CHECK_AND_ASSERT_MES(res, false, "Failed to handle command line");
     if (proxy.size())
     {
-      const auto endpoint = net::get_tcp_endpoint(proxy);
-      CHECK_AND_ASSERT_MES(endpoint, false, "Failed to parse proxy: " << proxy << " - " << endpoint.error());
+      const auto endpoint = net::socks::endpoint::get(proxy);
+      CHECK_AND_ASSERT_MES(endpoint, false, "Failed to parse proxy: " << proxy << " - " << endpoint.error().message());
       network_zone& public_zone = m_network_zones[epee::net_utils::zone::public_];
       public_zone.m_connect = &socks_connect;
       public_zone.m_proxy_address = *endpoint;
@@ -1146,19 +1151,19 @@ namespace nodetool
   {
     MDEBUG("[node] sending stop signal");
     for (auto& zone : m_network_zones)
-        zone.second.m_net_server.send_stop_signal();
-    MDEBUG("[node] Stop signal sent");
-
-    for (auto& zone : m_network_zones)
     {
-      std::list<boost::uuids::uuid> connection_ids;
-      zone.second.m_net_server.get_config_object().foreach_connection([&](const p2p_connection_context& cntxt) {
-        connection_ids.push_back(cntxt.m_connection_id);
-        return true;
-      });
-      for (const auto &connection_id: connection_ids)
-        zone.second.m_net_server.get_config_object().close(connection_id);
+      auto close_all_connections = [&zone]{
+        std::list<boost::uuids::uuid> connection_ids;
+        zone.second.m_net_server.get_config_object().foreach_connection([&](const p2p_connection_context& cntxt) {
+          connection_ids.push_back(cntxt.m_connection_id);
+          return true;
+        });
+        for (const auto &connection_id: connection_ids)
+          zone.second.m_net_server.get_config_object().close(connection_id, true);
+      };
+      zone.second.m_net_server.send_stop_signal(std::move(close_all_connections));
     }
+    MDEBUG("[node] Stop signal sent");
     m_payload_handler.stop();
     return true;
   }
@@ -1245,7 +1250,7 @@ namespace nodetool
     {
       LOG_WARNING_CC(context_, "COMMAND_HANDSHAKE Failed");
       if (!timeout)
-        zone.m_net_server.get_config_object().close(context_.m_connection_id);
+        zone.m_net_server.get_config_object().close(context_.m_connection_id, false);
     }
     else if (!just_take_peerlist)
     {
@@ -1279,14 +1284,14 @@ namespace nodetool
       if(!handle_remote_peerlist(rsp.local_peerlist_new, context))
       {
         LOG_WARNING_CC(context, "COMMAND_TIMED_SYNC: failed to handle_remote_peerlist(...), closing connection.");
-        m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id );
+        m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id, false);
         add_host_fail(context.m_remote_address);
       }
       if(!context.m_is_income)
         m_network_zones.at(context.m_remote_address.get_zone()).m_peerlist.set_peer_just_seen(context.peer_id, context.m_remote_address, context.m_pruning_seed, context.m_rpc_port, context.m_rpc_credits_per_hash);
       if (!m_payload_handler.process_payload_sync_data(rsp.payload_data, context, false))
       {
-        m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id );
+        m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id, false);
       }
     });
 
@@ -1443,7 +1448,7 @@ namespace nodetool
 
     if(just_take_peerlist)
     {
-      zone.m_net_server.get_config_object().close(con->m_connection_id);
+      zone.m_net_server.get_config_object().close(con->m_connection_id, false);
       LOG_DEBUG_CC(*con, "CONNECTION HANDSHAKED OK AND CLOSED.");
       return true;
     }
@@ -1505,7 +1510,7 @@ namespace nodetool
       return false;
     }
 
-    zone.m_net_server.get_config_object().close(con->m_connection_id);
+    zone.m_net_server.get_config_object().close(con->m_connection_id, false);
 
     LOG_DEBUG_CC(*con, "CONNECTION HANDSHAKED OK AND CLOSED.");
 
@@ -2153,7 +2158,7 @@ namespace nodetool
     if (!tools::dns_utils::load_txt_records_from_dns(records, dns_urls))
       return true;
 
-    unsigned good = 0, bad = 0;
+    unsigned good = 0;
     for (const auto& record : records)
     {
       std::vector<std::string> ips;
@@ -2177,7 +2182,6 @@ namespace nodetool
           continue;
         }
         MWARNING("Invalid IP address or subnet from DNS blocklist: " << ip << " - " << parsed_addr.error());
-        ++bad;
       }
     }
     if (good > 0)
@@ -2436,7 +2440,7 @@ namespace nodetool
   template<class t_payload_net_handler>
   bool node_server<t_payload_net_handler>::drop_connection(const epee::net_utils::connection_context_base& context)
   {
-    m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id);
+    m_network_zones.at(context.m_remote_address.get_zone()).m_net_server.get_config_object().close(context.m_connection_id, false);
     return true;
   }
   //-----------------------------------------------------------------------------------
@@ -2519,17 +2523,17 @@ namespace nodetool
         if(rsp.status != PING_OK_RESPONSE_STATUS_TEXT || pr != rsp.peer_id)
         {
           LOG_WARNING_CC(ping_context, "back ping invoke wrong response \"" << rsp.status << "\" from" << address.str() << ", hsh_peer_id=" << pr_ << ", rsp.peer_id=" << peerid_to_string(rsp.peer_id));
-          zone.m_net_server.get_config_object().close(ping_context.m_connection_id);
+          zone.m_net_server.get_config_object().close(ping_context.m_connection_id, false);
           return;
         }
-        zone.m_net_server.get_config_object().close(ping_context.m_connection_id);
+        zone.m_net_server.get_config_object().close(ping_context.m_connection_id, false);
         cb();
       });
 
       if(!inv_call_res)
       {
         LOG_WARNING_CC(ping_context, "back ping invoke failed to " << address.str());
-        zone.m_net_server.get_config_object().close(ping_context.m_connection_id);
+        zone.m_net_server.get_config_object().close(ping_context.m_connection_id, false);
         return false;
       }
       return true;

@@ -98,16 +98,18 @@ namespace cryptonote
   , "Fixed difficulty used for testing."
   , 0
   };
-  const command_line::arg_descriptor<std::string, false, true, 2> arg_data_dir = {
+  const command_line::arg_descriptor<std::string, false, true, 3> arg_data_dir = {
     "data-dir"
   , "Specify data directory"
   , tools::get_default_data_dir()
-  , {{ &arg_testnet_on, &arg_stagenet_on }}
-  , [](std::array<bool, 2> testnet_stagenet, bool defaulted, std::string val)->std::string {
-      if (testnet_stagenet[0])
+  , {{ &arg_testnet_on, &arg_stagenet_on, &arg_regtest_on }}
+  , [](std::array<bool, 3> nets, bool defaulted, std::string val)->std::string {
+      if (nets[0])
         return (boost::filesystem::path(val) / "testnet").string();
-      else if (testnet_stagenet[1])
+      else if (nets[1])
         return (boost::filesystem::path(val) / "stagenet").string();
+      else if (nets[2])
+        return (boost::filesystem::path(val) / "fake").string();
       return val;
     }
   };
@@ -123,6 +125,11 @@ namespace cryptonote
     "block-download-max-size"
   , "Set maximum size of block download queue in bytes (0 for default)"
   , 0
+  };
+  const command_line::arg_descriptor<size_t> arg_span_limit = {
+    "span-limit"
+  , "Defines how many minutes of block synchronization data to request at a time (default is 2 minutes)"
+  , 2
   };
   const command_line::arg_descriptor<bool> arg_sync_pruned_blocks  = {
     "sync-pruned-blocks"
@@ -328,6 +335,7 @@ namespace cryptonote
     command_line::add_arg(desc, arg_offline);
     command_line::add_arg(desc, arg_disable_dns_checkpoints);
     command_line::add_arg(desc, arg_block_download_max_size);
+    command_line::add_arg(desc, arg_span_limit);
     command_line::add_arg(desc, arg_sync_pruned_blocks);
     command_line::add_arg(desc, arg_max_txpool_weight);
     command_line::add_arg(desc, arg_block_notify);
@@ -467,8 +475,6 @@ namespace cryptonote
     bool keep_fakechain = command_line::get_arg(vm, arg_keep_fakechain);
 
     boost::filesystem::path folder(m_config_folder);
-    if (m_nettype == FAKECHAIN)
-      folder /= "fake";
 
     // make sure the data directory exists, and try to lock it
     CHECK_AND_ASSERT_MES (boost::filesystem::exists(folder) || boost::filesystem::create_directories(folder), false,
@@ -933,11 +939,7 @@ namespace cryptonote
   //-----------------------------------------------------------------------------------------------
   bool core::are_key_images_spent(const std::vector<crypto::key_image>& key_im, std::vector<bool> &spent) const
   {
-    spent.clear();
-    for(auto& ki: key_im)
-    {
-      spent.push_back(m_blockchain_storage.have_tx_keyimg_as_spent(ki));
-    }
+    spent = m_blockchain_storage.have_tx_keyimges_as_spent(epee::to_span(key_im));
     return true;
   }
   //-----------------------------------------------------------------------------------------------
@@ -1359,7 +1361,11 @@ namespace cryptonote
   bool core::prepare_handle_incoming_blocks(const std::vector<block_complete_entry> &blocks_entry, std::vector<block> &blocks)
   {
     m_incoming_tx_lock.lock();
-    if (!m_blockchain_storage.prepare_handle_incoming_blocks(blocks_entry, blocks))
+    bool success = false;
+    try { success = m_blockchain_storage.prepare_handle_incoming_blocks(blocks_entry, blocks); }
+    catch (const std::exception &e) { MERROR("Failed prepare handle incoming blocks: " << e.what()); }
+    catch (...) { MERROR("Failed prepare handling incoming blocks"); }
+    if (!success)
     {
       cleanup_handle_incoming_blocks(false);
       return false;

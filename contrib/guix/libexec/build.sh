@@ -199,6 +199,7 @@ case "$HOST" in
                 aarch64-linux-gnu)     echo /lib/ld-linux-aarch64.so.1 ;;
                 riscv64-linux-gnu)     echo /lib/ld-linux-riscv64-lp64d.so.1 ;;
                 i686-linux-gnu)        echo /lib/ld-linux.so.2 ;;
+                loongarch64-linux-gnu) echo /lib64/ld-linux-loongarch-lp64d.so.1 ;;
                 *)                     exit 1 ;;
             esac
         )
@@ -208,7 +209,7 @@ esac
 export GLIBC_DYNAMIC_LINKER=${glibc_dynamic_linker}
 
 # Environment variables for determinism
-export TAR_OPTIONS="--owner=0 --group=0 --numeric-owner --mtime='@${SOURCE_DATE_EPOCH}' --sort=name"
+export TAR_OPTIONS="--no-same-owner --owner=0 --group=0 --numeric-owner --mtime='@${SOURCE_DATE_EPOCH}' --sort=name"
 export TZ="UTC"
 
 ####################
@@ -261,7 +262,7 @@ fi
 
 # Use COMMIT_TIMESTAMP for the source and release binary archives
 export SOURCE_DATE_EPOCH=${COMMIT_TIMESTAMP}
-export TAR_OPTIONS="--owner=0 --group=0 --numeric-owner --mtime='@${SOURCE_DATE_EPOCH}' --sort=name"
+export TAR_OPTIONS="--no-same-owner --owner=0 --group=0 --numeric-owner --mtime='@${SOURCE_DATE_EPOCH}' --sort=name"
 
 GIT_ARCHIVE="${DIST_ARCHIVE_BASE}/jude-source-${VERSION}.tar.gz"
 

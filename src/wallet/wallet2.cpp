@@ -249,7 +249,7 @@ struct options {
   const command_line::arg_descriptor<bool> untrusted_daemon = {"untrusted-daemon", tools::wallet2::tr("Disable commands which rely on a trusted daemon"), false};
   const command_line::arg_descriptor<std::string> password = {"password", tools::wallet2::tr("Wallet password (escape/quote as needed)"), "", true};
   const command_line::arg_descriptor<std::string> password_file = wallet_args::arg_password_file();
-  const command_line::arg_descriptor<int> daemon_port = {"daemon-port", tools::wallet2::tr("Use daemon instance at port <arg> instead of 18081"), 0};
+  const command_line::arg_descriptor<int> daemon_port = {"daemon-port", tools::wallet2::tr("Use daemon instance at port <arg> instead of 16063"), 0};
   const command_line::arg_descriptor<std::string> daemon_login = {"daemon-login", tools::wallet2::tr("Specify username[:password] for daemon RPC client"), "", true};
   const command_line::arg_descriptor<std::string> daemon_ssl = {"daemon-ssl", tools::wallet2::tr("Enable SSL on daemon RPC connections: enabled|disabled|autodetect"), "autodetect"};
   const command_line::arg_descriptor<std::string> daemon_ssl_private_key = {"daemon-ssl-private-key", tools::wallet2::tr("Path to a PEM format private key"), ""};
@@ -437,7 +437,7 @@ std::unique_ptr<tools::wallet2> make_basic(const boost::program_options::variabl
   {
     proxy = command_line::get_arg(vm, opts.proxy);
     THROW_WALLET_EXCEPTION_IF(
-      !net::get_tcp_endpoint(proxy),
+      !net::socks::endpoint::get(proxy),
       tools::error::wallet_internal_error,
       std::string{"Invalid address specified for --"} + opts.proxy.name);
   }
@@ -979,7 +979,7 @@ bool get_pruned_tx(const cryptonote::COMMAND_RPC_GET_TRANSACTIONS::entry &entry,
     // only v2 txes can calculate their txid after pruned
     if (bd[0] > 1)
     {
-      tx_hash = cryptonote::get_pruned_transaction_hash(tx, ph);
+      CHECK_AND_ASSERT_MES(cryptonote::get_pruned_transaction_hash(tx, ph, tx_hash), false, "Failed to get pruned tx hash");
     }
     else
     {
@@ -5419,7 +5419,7 @@ bool wallet2::verify_password(const std::string& keys_file_name, const epee::wip
     {
       get_custom_background_key(password, key, kdf_rounds);
       crypto::chacha20(keys_file_data.account_data.data(), keys_file_data.account_data.size(), key, keys_file_data.iv, &account_data[0]);
-      const bool is_background_wallet = json.Parse(account_data.c_str()).HasParseError() && json.IsObject();
+      const bool is_background_wallet = !json.Parse(account_data.c_str()).HasParseError() && json.IsObject();
       no_spend_key = no_spend_key || is_background_wallet;
     }
   }
@@ -8160,6 +8160,8 @@ bool wallet2::parse_multisig_tx_from_str(std::string multisig_tx_st, multisig_tx
     for (size_t idx: ptx.construction_data.selected_transfers)
       CHECK_AND_ASSERT_MES(idx < m_transfers.size(), false, "Transfer index out of range");
     CHECK_AND_ASSERT_MES(ptx.construction_data.sources.size() == ptx.tx.vin.size(), false, "Mismatched sources/vin sizes");
+    CHECK_AND_ASSERT_MES(!ptx.tx.vin.empty(), false, "Multisig tx has no inputs");
+    CHECK_AND_ASSERT_MES(!ptx.construction_data.sources.empty(), false, "Multisig tx has no sources");
   }
 
   return true;
@@ -14604,7 +14606,7 @@ void wallet2::update_multisig_rescan_info(const std::vector<std::vector<rct::key
   m_key_images[td.m_key_image] = n;
 }
 //----------------------------------------------------------------------------------------------------
-size_t wallet2::import_multisig(std::vector<cryptonote::blobdata> blobs)
+size_t wallet2::import_multisig(std::vector<cryptonote::blobdata> blobs, bool refresh_after_import)
 {
   CHECK_AND_ASSERT_THROW_MES(m_multisig, "Wallet is not multisig");
 
@@ -14723,7 +14725,8 @@ size_t wallet2::import_multisig(std::vector<cryptonote::blobdata> blobs)
   }
 
 
-  refresh(false);
+  if (refresh_after_import)
+    refresh(false);
 
   return n_outputs;
 }

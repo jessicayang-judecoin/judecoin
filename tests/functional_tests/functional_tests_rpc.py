@@ -5,9 +5,7 @@ import time
 import subprocess
 from signal import SIGTERM
 import socket
-import string
 import os
-import time
 
 USAGE = 'usage: functional_tests_rpc.py <python> <srcdir> <builddir> [<tests-to-run> | all]'
 DEFAULT_TESTS = [
@@ -27,7 +25,7 @@ try:
   sys.argv[4]
 except:
   print(USAGE)
-  print('Available tests: ' + string.join(DEFAULT_TESTS, ', '))
+  print('Available tests: ' + ', '.join(DEFAULT_TESTS))
   print('Or run all with "all"')
   sys.exit(0)
 
@@ -60,7 +58,7 @@ juded_extra = [
   ["--add-exclusive-node", "127.0.0.1:18282"],
   ["--rpc-login", "md5_lover:Z1ON0101", "--offline"],
 ]
-wallet_base = [builddir + "/bin/jude-wallet-rpc", "--wallet-dir", WALLET_DIRECTORY, "--rpc-bind-port", "wallet_port", "--rpc-ssl", "disabled", "--daemon-ssl", "disabled", "--log-level", "1", "--allow-mismatched-daemon-version"]
+wallet_base = [builddir + "/bin/judecoin-wallet-rpc", "--wallet-dir", WALLET_DIRECTORY, "--rpc-bind-port", "wallet_port", "--rpc-ssl", "disabled", "--daemon-ssl", "disabled", "--log-level", "1", "--allow-mismatched-daemon-version"]
 wallet_extra = [
   ["--daemon-port", "18180", "--disable-rpc-login"],
   ["--daemon-port", "18180", "--disable-rpc-login"],
@@ -175,7 +173,7 @@ else:
       if p.returncode:
         n_returncode += 1
     if n_returncode == len(processes):
-      print('All done: ' + string.join([x.returncode for x in processes], ', '))
+      print('All done: ' + ', '.join(str(x.returncode) for x in processes))
       break
     time.sleep(1)
   for p in processes:

@@ -47,7 +47,7 @@ class AddressBookTest():
         except: pass
         seed = 'velvet lymph giddy number token physics poetry unquoted nibs useful sabotage limits benches lifestyle eden nitrogen anvil fewest avoid batch vials washing fences goat unquoted'
         res = wallet.restore_deterministic_wallet(seed = seed)
-        assert res.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert res.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert res.seed == seed
 
     def test_address_book(self):
@@ -71,18 +71,18 @@ class AddressBookTest():
         assert ok
 
         # add one
-        res = wallet.add_address_book('42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm', description = 'self')
+        res = wallet.add_address_book('J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF', description = 'self')
         assert res.index == 0, res
         for get_all in [True, False]:
             res = wallet.get_address_book() if get_all else wallet.get_address_book([0])
             assert len(res.entries) == 1
             e = res.entries[0]
             assert e.index == 0
-            assert e.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm', e
+            assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF', e
             assert e.description == 'self'
 
         # add a duplicate
-        res = wallet.add_address_book('42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm', description = 'self')
+        res = wallet.add_address_book('J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF', description = 'self')
         assert res.index == 1
         res = wallet.get_address_book()
         assert len(res.entries) == 2
@@ -126,7 +126,7 @@ class AddressBookTest():
         errors = 0
         try: wallet.add_address_book('', description = 'bad')
         except: errors += 1
-        try: wallet.add_address_book('42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm ', description = 'bad')
+        try: wallet.add_address_book('J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF ', description = 'bad')
         except: errors += 1
         try: wallet.add_address_book('42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDn', description = 'bad')
         except: errors += 1
@@ -138,17 +138,17 @@ class AddressBookTest():
         res = wallet.get_address_book()
         assert not 'entries' in res or len(res.entries) == 0
 
-        # openalias
-        res = wallet.add_address_book('donate@getjude.org', description = 'dev fund')
+        # Judecoin donation address
+        res = wallet.add_address_book('J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF', description = 'dev fund')
         assert res.index == 0
         res = wallet.get_address_book()
         assert len(res.entries) == 1
         e = res.entries[0]
-        assert e.address == '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == 'dev fund'
 
         # UTF-8
-        res = wallet.add_address_book('42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm', description = u'あまやかす')
+        res = wallet.add_address_book('J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF', description = u'あまやかす')
         assert res.index == 1
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
@@ -172,11 +172,11 @@ class AddressBookTest():
         # get them back
         res = wallet.get_address_book([0])
         assert len(res.entries) == 1
-        assert res.entries[0].address == '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H'
+        assert res.entries[0].address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert res.entries[0].description == 'dev fund'
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
-        assert res.entries[0].address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert res.entries[0].address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert res.entries[0].description == u'あまやかす'
         res = wallet.get_address_book([2])
         assert len(res.entries) == 1
@@ -190,34 +190,34 @@ class AddressBookTest():
         assert len(res.entries) == 1
         e = res.entries[0]
         assert e.index == 1
-        assert e.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == u'あまやかす'
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
         e = res.entries[0]
         assert e.index == 1
-        assert e.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == u'あまやかす'
         res = wallet.edit_address_book(1, description = '')
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
         e = res.entries[0]
         assert e.index == 1
-        assert e.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == ''
         res = wallet.edit_address_book(1, description = 'えんしゅう')
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
         e = res.entries[0]
         assert e.index == 1
-        assert e.address == '42ey1afDFnn4886T7196doS9GPMzexD9gXpsZJDwVjeRVdFCSoHnv7KPbBeGpzJBzHRCAs9UxqeoyFQMYbqSWYTfJJQAWDm'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == u'えんしゅう'
-        res = wallet.edit_address_book(1, address = '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H')
+        res = wallet.edit_address_book(1, address = 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF')
         res = wallet.get_address_book([1])
         assert len(res.entries) == 1
         e = res.entries[0]
         assert e.index == 1
-        assert e.address == '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H'
+        assert e.address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert e.description == u'えんしゅう'
         ok = False
         try: res = wallet.edit_address_book(1, address = '')
@@ -236,7 +236,7 @@ class AddressBookTest():
         wallet.delete_address_book(0)
         res = wallet.get_address_book([0]) # entries above the deleted one collapse one slot up
         assert len(res.entries) == 1
-        assert res.entries[0].address == '888tNkZrPN6JsEgekjMnABU4TBzc2Dt29EPAvkRxbANsAnjyPbb3iQ1YBRk1UXcdRsiKc9dhwMVgN5S9cQUiyoogDavup3H'
+        assert res.entries[0].address == 'J6GX4gh7ix1ft9xVvUci45cTPFPjaRihnNQ7Y8kRvAxCNGVh6Fw8Hw83aJ8hFZyYtvB2CBaBfNKK3gSr4zJkqox1Jm2TiLF'
         assert res.entries[0].description == u'えんしゅう'
         wallet.delete_address_book(2)
         wallet.delete_address_book(0)

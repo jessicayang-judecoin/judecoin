@@ -97,7 +97,7 @@ endif()
 
 enable_language(C ASM)
 
-# Require C11/C++11 and disable extensions for all targets
+# Require C11/C++17 and disable extensions for all targets
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -351,7 +351,7 @@ endif()
 if(WIN32 OR ARM OR PPC64LE OR PPC64 OR PPC)
   set(OPT_FLAGS_RELEASE "-O2")
 else()
-  set(OPT_FLAGS_RELEASE "-Ofast")
+  set(OPT_FLAGS_RELEASE "-O3 -ffast-math -fno-semantic-interposition") # not present: -fallow-store-data-races
 endif()
 
 # BUILD_TAG is used to select the build type to check for a new version
@@ -508,7 +508,7 @@ if (APPLE OR NETBSD)
 elseif (DEPENDS AND NOT LINUX)
   set(DEFAULT_STACK_TRACE OFF)
   set(LIBUNWIND_LIBRARIES "")
-elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT MINGW)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT MINGW)
   set(DEFAULT_STACK_TRACE ON)
   set(STACK_TRACE_LIB "easylogging++") # for diag output only
   set(LIBUNWIND_LIBRARIES "")

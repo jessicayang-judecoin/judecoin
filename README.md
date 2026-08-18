@@ -29,10 +29,11 @@ Portions Copyright (c) The Cryptonote developers.
 
 ## Development Resources
 
-- Web: [judecoin.io](https://www.judecoin.io/)
-- Blog / Updates: [judecoin.io/blog](https://www.judecoin.io/blog)
+- Web: [judecoin.info](https://www.judecoin.info/)
+- Community-News: [github.com/Judecoin/information](https://github.com/Judecoin/information/tree/main/community-news)
 - GitHub: [github.com/Judecoin/judecoin](https://github.com/Judecoin/judecoin)
-- Block Explorer: [judeblock.org](https://www.judeblock.org/)
+- Block Explorer Ⅰ: [judeblock.org](https://www.judeblock.org/)
+- Block Explorer Ⅱ: [judeblock.net](https://www.judeblock.net/)
 
 ## Documentation
 
@@ -43,7 +44,7 @@ Portions Copyright (c) The Cryptonote developers.
 
 Responsible disclosure is encouraged.
 
-If you discover a security issue, please report it through the official Judecoin communication channels or the official repository issue process when appropriate.
+If you discover a security issue, please report it through the community Judecoin communication channels or the community repository issue process when appropriate.
 
 Please do not publicly disclose sensitive vulnerabilities before they have been reviewed.
 
@@ -51,17 +52,17 @@ Please do not publicly disclose sensitive vulnerabilities before they have been 
 
 Judecoin research and development may include work related to privacy, cryptography, protocols, fungibility, network behavior, wallet tools, and Service Node operation.
 
-For roadmap-related research and development directions, please refer to the [Judecoin Roadmap](https://www.judecoin.io/roadmap).
+For roadmap-related research and development directions, please refer to the [Judecoin Roadmap](https://www.judecoin.info/roadmap).
 
 Researchers, developers, and contributors are welcome to review the codebase, discuss technical improvements, and submit relevant contributions.
 
 ## Announcements
 
-Important announcements, software updates, release notes, and upgrade information should be checked through official Judecoin resources.
+Important dynamic, software updates, release notes, and upgrade information should be checked through community Judecoin resources.
 
-For updates, please refer to the [Judecoin Blog / Updates](https://www.judecoin.io/blog).
+For updates, please refer to the [Judecoin Community News](https://www.judecoin.info/community-news).
 
-Users, wallet operators, node operators, and service providers should keep their software updated according to official release guidance.
+Users, wallet operators, node operators, and service providers should keep their software updated according to community release guidance.
 
 ## Translations
 
@@ -115,7 +116,7 @@ As with many open source projects, this repository may include ongoing developme
 
 Judecoin is a community-supported open source project.
 
-If you would like to support the project, you may do so through the official donation address below, or by using the `donate` command in the command-line wallet.
+If you would like to support the project, you may do so through the community donation address below, or by using the `donate` command in the command-line wallet.
 
 The Judecoin donation address is:
 
@@ -161,7 +162,7 @@ library archives (`.a`).
 | Dep          | Min. version  | Vendored | Debian/Ubuntu pkg    | Arch pkg     | Void pkg           | Fedora pkg          | Optional | Purpose         |
 | ------------ | ------------- | -------- | -------------------- | ------------ | ------------------ | ------------------- | -------- | --------------- |
 | GCC          | 4.7.3         | NO       | `build-essential`    | `base-devel` | `base-devel`       | `gcc`               | NO       |                 |
-| CMake        | 3.5           | NO       | `cmake`              | `cmake`      | `cmake`            | `cmake`             | NO       |                 |
+| CMake        | 3.10          | NO       | `cmake`              | `cmake`      | `cmake`            | `cmake`             | NO       |                 |
 | pkg-config   | any           | NO       | `pkg-config`         | `base-devel` | `base-devel`       | `pkgconf`           | NO       |                 |
 | Boost        | 1.58          | NO       | `libboost-all-dev`   | `boost`      | `boost-devel`      | `boost-devel`       | NO       | C++ libraries   |
 | OpenSSL      | basically any | NO       | `libssl-dev`         | `openssl`    | `libressl-devel`   | `openssl-devel`     | NO       | sha256 sum      |
@@ -410,7 +411,7 @@ application.
     cd judecoin
     ```
 
-* If you would like a specific [version/tag](https://github.com/Judecoin/judecoin/tags), do a git checkout for that version. eg. 'v0.17.1.0'. If you don't care about the version and just want binaries from master, skip this step:
+* If you would like a specific [version/tag](https://github.com/Judecoin/judecoin/tags), check out that version tag. For example, use the latest stable Judecoin release tag. If you don't care about the version and just want binaries from master, skip this step:
 
     ```bash
     git checkout <latest-release-tag>
@@ -587,13 +588,17 @@ Packages are available for
     # or build using a specific number of cores (reduce RAM requirement)
     docker build --build-arg NPROC=1 -t judecoin .
 
-    # either run in foreground
-    docker run -it -v /judecoin/chain:/root/.bitjudecoin -v /judecoin/wallet:/wallet -p 18080:18080 judecoin
+    # Run with the default non-root container user
+    docker run -it -v /judecoin/chain:/home/judecoin/.bitjudecoin -v /judecoin/wallet:/wallet -p 16060:16060 judecoin
 
-    # or in background
-    docker run -it -d -v /judecoin/chain:/root/.bitjudecoin -v /judecoin/wallet:/wallet -p 18080:18080 judecoin
+    # Or run in background with the default non-root container user
+    docker run -it -d -v /judecoin/chain:/home/judecoin/.bitjudecoin -v /judecoin/wallet:/wallet -p 16060:16060 judecoin
+
+    # Optional: run as root, matching the traditional ~/.bitjudecoin path
+    docker run -it --user root -v /judecoin/chain:/root/.bitjudecoin -v /judecoin/wallet:/wallet -p 16060:16060 judecoin \
+    --data-dir=/root/.bitjudecoin --p2p-bind-ip=0.0.0.0 --p2p-bind-port=16060 --rpc-bind-ip=0.0.0.0 --rpc-bind-port=16063 --restricted-rpc --non-interactive --confirm-external-bind
     ```
-
+* RPC security: The examples above publish only the P2P port (`16060`). If the RPC port (`16063`) is also published, keep `--restricted-rpc` enabled and restrict access with a firewall. Never expose unrestricted RPC to the public internet.
 * The build needs 3 GB space.
 * Wait one hour or more
 
@@ -680,14 +685,14 @@ to add a rule to allow this connection too, in addition to telling torsocks to
 allow inbound connections. Full example:
 
 ```bash
-sudo iptables -I OUTPUT 2 -p tcp -d 127.0.0.1 -m tcp --dport 18081 -j ACCEPT
+sudo iptables -I OUTPUT 2 -p tcp -d 127.0.0.1 -m tcp --dport 16063 -j ACCEPT
 DNS_PUBLIC=tcp torsocks ./judecoind --p2p-bind-ip 127.0.0.1 --no-igd --rpc-bind-ip 127.0.0.1 \
     --data-dir /home/amnesia/Persistent/your/directory/to/the/blockchain
 ```
 
 ## Pruning
 
-As of May 2020, the full Judecoin blockchain file is about 80 GB. One can store a pruned blockchain, which is about 28 GB.
+The full Judecoin blockchain data directory can grow over time as new blocks are added. Users who want to reduce storage requirements can run a pruned blockchain.
 A pruned blockchain can only serve part of the historical chain data to other peers, but is otherwise identical in
 functionality to the full blockchain.
 To use a pruned blockchain, it is best to start the initial sync with --prune-blockchain. However, it is also possible

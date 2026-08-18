@@ -282,6 +282,8 @@ public:
 
   bool has_key_image(const crypto::key_image& img) const override;
 
+  std::vector<bool> has_key_images(const epee::span<const crypto::key_image> img) const override;
+
   void add_txpool_tx(const crypto::hash &txid, const cryptonote::blobdata_ref &blob, const txpool_tx_meta_t& meta) override;
   void update_txpool_tx(const crypto::hash &txid, const txpool_tx_meta_t& meta) override;
   uint64_t get_txpool_tx_count(relay_category category = relay_category::broadcasted) const override;
@@ -416,9 +418,6 @@ private:
   uint64_t get_database_size() const override;
 
   std::vector<uint64_t> get_block_info_64bit_fields(uint64_t start_height, size_t count, off_t offset) const;
-
-  uint64_t get_max_block_size() override;
-  void add_max_block_size(uint64_t sz) override;
 
   // fix up anything that may be wrong due to past bugs
   void fixup() override;
