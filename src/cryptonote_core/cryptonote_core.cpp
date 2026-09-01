@@ -348,13 +348,21 @@ namespace cryptonote
     BlockchainDB::init_options(desc);
   }
   //-----------------------------------------------------------------------------------------------
+  network_type core::get_network_type_from_args(const boost::program_options::variables_map& vm)
+  {
+    const bool testnet = command_line::get_arg(vm, arg_testnet_on);
+    const bool stagenet = command_line::get_arg(vm, arg_stagenet_on);
+    const bool regtest = command_line::get_arg(vm, arg_regtest_on);
+    if (testnet + stagenet + regtest > 1)
+      throw std::runtime_error("More than one network type argument was specified");
+    return testnet ? TESTNET : stagenet ? STAGENET : regtest ? FAKECHAIN : MAINNET;
+  }
+  //-----------------------------------------------------------------------------------------------
   bool core::handle_command_line(const boost::program_options::variables_map& vm)
   {
     if (m_nettype != FAKECHAIN)
     {
-      const bool testnet = command_line::get_arg(vm, arg_testnet_on);
-      const bool stagenet = command_line::get_arg(vm, arg_stagenet_on);
-      m_nettype = testnet ? TESTNET : stagenet ? STAGENET : MAINNET;
+      m_nettype = get_network_type_from_args(vm);
     }
 
     m_config_folder = command_line::get_arg(vm, arg_data_dir);
@@ -1092,7 +1100,7 @@ namespace cryptonote
     const bool res = m_mempool.add_tx(tx, tx_hash, blob, tx_weight, tvc, tx_relay, relayed, version);
 
     // If new incoming tx passed verification and entered the pool, notify ZMQ
-    if (!tvc.m_verifivation_failed && tvc.m_added_to_pool && matches_category(tx_relay, relay_category::legacy))
+    if (!tvc.m_verifivation_failed && res && matches_category(tx_relay, relay_category::legacy))
     {
       m_blockchain_storage.notify_txpool_event({txpool_event{
         .tx = tx,
